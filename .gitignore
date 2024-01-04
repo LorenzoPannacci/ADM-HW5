@@ -163,3 +163,4 @@ cython_debug/
 data/dblp.v12.json
 small_dataset.csv
 dataset/
+my_pagerank.pickle
