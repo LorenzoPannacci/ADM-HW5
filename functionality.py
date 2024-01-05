@@ -13,19 +13,44 @@ def graph_features(graph, graph_name):
     density = nx.density(graph)
 
     # Graph degree distribution
-    degrees = sorted([graph.degree(node) for node in graph.nodes()])
+    # this is different based on the type of the graph
+    if graph_name == "Citation Graph":
+        # for citation graph we have to do both distinguish between in-degree and out-degree
+        in_degrees = sorted([graph.in_degree(node) for node in graph.nodes()])
 
-    degree_distro = {}
-    for degree in degrees:
-        if degree in degree_distro:
-            degree_distro[degree] += 1
-        else:
-            degree_distro[degree] = 1
+        in_degree_distro = {}
+        for degree in in_degrees:
+            if degree in in_degree_distro:
+                in_degree_distro[degree] += 1
+            else:
+                in_degree_distro[degree] = 1
+        
+        out_degrees = sorted([graph.out_degree(node) for node in graph.nodes()])
+
+        out_degree_distro = {}
+        for degree in out_degrees:
+            if degree in out_degree_distro:
+                out_degree_distro[degree] += 1
+            else:
+                out_degree_distro[degree] = 1
+
+    else:
+        # collaboration graph is undirected
+
+        degrees = sorted([graph.degree(node) for node in graph.nodes()])
+
+        degree_distro = {}
+        for degree in degrees:
+            if degree in degree_distro:
+                degree_distro[degree] += 1
+            else:
+                degree_distro[degree] = 1
 
     # Average degree of the graph
     avg_degree = 2 * edges / nodes
 
     # Calculating 95th percentile for graph hubs
+    degrees = sorted([graph.degree(node) for node in graph.nodes()])
     percentile_95 = degrees[math.ceil(0.95 * len(degrees))]
 
     # Finding graph hubs
@@ -35,16 +60,34 @@ def graph_features(graph, graph_name):
     graph_type = "Dense" if density > 0.5 else "Sparse"
 
     # Returning the computed features
-    return {
-        "Graph Name": graph_name,
-        "Number of Nodes": nodes,
-        "Number of Edges": edges,
-        "Graph Density": density,
-        "Graph Degree Distribution": degree_distro,
-        "Average Degree": avg_degree,
-        "Graph Hubs": graph_hubs,
-        "Graph Type": graph_type
-    }
+
+    if graph_name == "Citation Graph":
+        # for citation graph
+
+        return {
+            "Graph Name": graph_name,
+            "Number of Nodes": nodes,
+            "Number of Edges": edges,
+            "Graph Density": density,
+            "Graph In-Degree Distribution": in_degree_distro,
+            "Graph Out-Degree Distribution": out_degree_distro,
+            "Average Degree": avg_degree,
+            "Graph Hubs": graph_hubs,
+            "Graph Type": graph_type
+        }
+
+    else:
+        # for collaboration graph
+        return {
+            "Graph Name": graph_name,
+            "Number of Nodes": nodes,
+            "Number of Edges": edges,
+            "Graph Density": density,
+            "Graph Degree Distribution": degree_distro,
+            "Average Degree": avg_degree,
+            "Graph Hubs": graph_hubs,
+            "Graph Type": graph_type
+        }
 
 # 2.1.2
 def calculate_centralities(graph, graph_name, node):
