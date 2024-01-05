@@ -1,4 +1,5 @@
 import networkx as nx
+import math
 
 # 2.1.1
 def graph_features(graph, graph_name):
@@ -12,20 +13,26 @@ def graph_features(graph, graph_name):
     density = nx.density(graph)
 
     # Graph degree distribution
-    degree_distro = dict(graph.degree())
+    degrees = sorted([graph.degree(node) for node in graph.nodes()])
+
+    degree_distro = {}
+    for degree in degrees:
+        if degree in degree_distro:
+            degree_distro[degree] += 1
+        else:
+            degree_distro[degree] = 1
 
     # Average degree of the graph
-    avg_degree = sum(dict(graph.degree()).values()) / nodes
+    avg_degree = 2 * edges / nodes
 
     # Calculating 95th percentile for graph hubs
-    degree_values = sorted(list(dict(graph.degree()).values()))
-    percentile_95 = degree_values[int(0.95 * len(degree_values))]
+    percentile_95 = degrees[math.ceil(0.95 * len(degrees))]
 
     # Finding graph hubs
     graph_hubs = [node for node, degree in dict(graph.degree()).items() if degree > percentile_95]
 
     # Determining whether the graph is dense or sparse
-    graph_type = "Dense" if density >= 0.5 else "Sparse"
+    graph_type = "Dense" if density > 0.5 else "Sparse"
 
     # Returning the computed features
     return {
@@ -39,7 +46,7 @@ def graph_features(graph, graph_name):
         "Graph Type": graph_type
     }
 
-#2
+# 2.1.2
 def calculate_centralities(graph, graph_name, node):
     # Calculate centrality measures
     betweenness = nx.betweenness_centrality(graph)[node]
@@ -56,7 +63,7 @@ def calculate_centralities(graph, graph_name, node):
         "Degree Centrality": degree
     }
 
-#3
+# 2.1.3
 def shortest_ordered_walk_v2(graph, authors_a, a_1, a_n):
     # Check if a_1 and a_n are in the graph
     if a_1 not in graph.nodes() or a_n not in graph.nodes():
