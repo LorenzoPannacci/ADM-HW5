@@ -1,6 +1,6 @@
 import networkx as nx
 
-#1
+# 2.1.1
 def graph_features(graph, graph_name):
     # Number of nodes in the graph
     nodes = graph.number_of_nodes()
