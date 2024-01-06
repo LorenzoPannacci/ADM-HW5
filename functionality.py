@@ -1,5 +1,5 @@
 import networkx as nx
-import heapq
+from collections import deque
 
 #1
 def graph_features(graph, graph_name):
@@ -58,6 +58,8 @@ def calculate_centralities(graph, graph_name, node):
     }
 
 #3
+
+import heapq
 
 def dijkstra_shortest_path(graph, start, end):
     # Initialize dictionaries to track distances and predecessors
@@ -163,7 +165,11 @@ def has_path(graph, start, end):
 
     while queue:
         current_node = queue.pop(0)
+        print(f"Current node: {current_node}")
+        print(f"Queue: {queue}")
+
         if current_node == end:
+            print("Path found!")
             return True  # There's a path between start and end
 
         visited.add(current_node)
@@ -171,16 +177,22 @@ def has_path(graph, start, end):
             if edge[0] == current_node and edge[1] not in visited:
                 queue.append(edge[1])
 
+    print("No path found.")
     return False  # There's no path between start and end
+
 
 def min_edges_to_disconnect(graph, author_a, author_b, top_authors):
     # Create a subgraph with only the top authors
     subgraph = subgraph_nodes(graph, top_authors)
+    print(f"Subgraph nodes: {subgraph.nodes}")
+    print(f"Subgraph edges: {subgraph.edges}")
 
     edges_to_remove = subgraph.edges
+    print(f"Edges to remove: {edges_to_remove}")
 
     min_edges = 0
     while has_path(subgraph, author_a, author_b):
+        print(f"Path exists between {author_a} and {author_b}")
         if not edges_to_remove:
             return float('inf')  # No possible disconnection path found
 
@@ -188,6 +200,7 @@ def min_edges_to_disconnect(graph, author_a, author_b, top_authors):
         edge = edges_to_remove.pop()
         subgraph = remove_edges(subgraph, [edge])
         min_edges += 1
+        print(f"Removed edge {edge}. Min edges: {min_edges}")
 
     return min_edges
 
