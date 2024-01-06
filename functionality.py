@@ -100,7 +100,7 @@ def calculate_centralities(graph, graph_name, node):
     return {
         "Graph Name": graph_name,
         "Node": node,
-        "Betweenness": betweenness,
+        "Betweenness Centrality": betweenness,
         "PageRank": pagerank,
         "Closeness Centrality": closeness,
         "Degree Centrality": degree

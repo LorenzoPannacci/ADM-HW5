@@ -72,3 +72,26 @@ def visualization_1(input_dict):
 
     plt.tight_layout()
     plt.show()
+
+def visualization_2(input_dict):
+    plt.figure(figsize=(6, 2))
+
+    # create data from input dictionary:
+
+    data = [
+        ["Betweenness Centrality", input_dict["Betweenness Centrality"]],
+        ["PageRank", input_dict["PageRank"]],
+        ["Closeness Centrality", input_dict["Closeness Centrality"]],
+        ["Degree Centrality", input_dict["Degree Centrality"]]
+    ]
+
+    table = plt.table(cellText=data, colLabels=["Measure", "Value"], loc='center', cellLoc='center')
+
+    # make column and row names bold
+    for (row, col), cell in table.get_celld().items():
+        if row == 0 or col == 0:
+            cell.set_text_props(fontproperties=FontProperties(weight='bold'))
+
+    plt.axis('off')
+    plt.title("Contribution table for node " + str(input_dict["Node"]) + " for " + input_dict["Graph Name"])
+    plt.show()
