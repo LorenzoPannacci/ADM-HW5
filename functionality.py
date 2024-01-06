@@ -1,5 +1,5 @@
 import networkx as nx
-from collections import deque
+import heapq
 
 #1
 def graph_features(graph, graph_name):
@@ -59,26 +59,41 @@ def calculate_centralities(graph, graph_name, node):
 
 #3
 
-def bfs_shortest_path(graph, start, end):
-    # Dictionary to track visited nodes and their predecessors
-    visited = {node: False for node in graph}
-    visited[start] = True
-    queue = deque([(start, [start])])  # Queue with the starting node and its partial path
+def dijkstra_shortest_path(graph, start, end):
+    # Initialize dictionaries to track distances and predecessors
+    distances = {node: float('inf') for node in graph}
+    distances[start] = 0
+    predecessors = {node: None for node in graph}
+
+    # Priority queue to keep track of nodes to explore
+    queue = [(0, start)]  # Tuple of (distance, node)
 
     while queue:
-        current_node, path = queue.popleft()
+        current_distance, current_node = heapq.heappop(queue)
 
-        # If we reach the destination node, return the path
+        # If we've already explored this node with a shorter distance, ignore it
+        if current_distance > distances[current_node]:
+            continue
+
+        # If we've reached the destination node, construct the path and return it
         if current_node == end:
-            return path
+            path = []
+            while current_node is not None:
+                path.append(current_node)
+                current_node = predecessors[current_node]
+            return path[::-1]  # Reverse the path to get from start to end
 
         # Explore neighbors of the current node
-        for neighbor in graph[current_node]:
-            if not visited[neighbor]:
-                visited[neighbor] = True
-                queue.append((neighbor, path + [neighbor]))  # Add the node to the queue with the partial path
+        for neighbor, weight in graph[current_node].items():
+            distance = current_distance + weight
+            # If we've found a shorter path, update the information
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                predecessors[neighbor] = current_node
+                heapq.heappush(queue, (distance, neighbor))
 
     return None  # If there's no path between start and end
+
 
 def shortest_ordered_walk_v2(graph, authors_a, a_1, a_n):
     # Check if a_1 and a_n are in the graph
@@ -98,7 +113,7 @@ def shortest_ordered_walk_v2(graph, authors_a, a_1, a_n):
             return "There is no such path."
 
         # Find the shortest path between current node (ordered_nodes[i]) and the next node (ordered_nodes[i + 1])
-        path = bfs_shortest_path(graph, ordered_nodes[i], ordered_nodes[i + 1])
+        path = dijkstra_shortest_path(graph, ordered_nodes[i], ordered_nodes[i + 1])
 
         # Add nodes from the path (excluding the last node) to the shortest_path list
         shortest_path.extend(path[:-1] if path else [])
