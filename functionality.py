@@ -185,69 +185,36 @@ def min_edges_to_disconnect(graph, start_node, end_node, pass_through_nodes):
 
 
 #5
-class Graph:
-    def __init__(self):
-        self.nodes = set()
-        self.edges = {}  # Storing edges as a dictionary of sets
+# Function to find communities in the graph using the connected components algorithm
+def find_communities(graph):
+    def dfs(node, visited):
+        visited.add(node)
+        component.append(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                dfs(neighbor, visited)
 
-    def add_node(self, node):
-        self.nodes.add(node)
-        self.edges[node] = set()  # Initialize edges for the node
-
-    def add_edge(self, node1, node2):
-        if node1 in self.edges and node2 in self.edges:
-            self.edges[node1].add(node2)
-            self.edges[node2].add(node1)  # Assuming undirected graph
-
-def extract_communities(graph, paper_1, paper_2, top_authors):
-    top_authors_data = [author for author in top_authors if author in graph.nodes]
-
-    subgraph = Graph()
-    for author in top_authors_data:
-        subgraph.add_node(author)
-        if isinstance(graph.edges, dict) and author in graph.edges:
-            neighbors = graph.edges[author]
-            if isinstance(neighbors, set):
-                for neighbor in neighbors:
-                    if neighbor in top_authors_data:
-                        subgraph.add_edge(author, neighbor)
-
-    if not subgraph.nodes:
-        return "The subgraph has no nodes."
-
-    communities = greedy_modularity_communities(subgraph)
-
-    edges_to_remove = modularity(subgraph, communities)
-
-    return edges_to_remove
-
-def greedy_modularity_communities(graph):
+    visited = set()
     communities = []
-    nodes = list(graph.nodes)
-    while nodes:
-        node = nodes.pop(0)
-        neighbors = graph.edges[node]
-        community = {node}
-        previous_community_length = 0
-
-        while len(community) > previous_community_length:
-            previous_community_length = len(community)
-            for neighbor in list(neighbors):
-                if all(neigh in community or neigh not in graph.edges for neigh in graph.edges[neighbor]):
-                    community.add(neighbor)
-                    neighbors |= graph.edges[neighbor]
-
-        communities.append(community)
-        nodes = [n for n in nodes if n not in community]
-
+    for node in graph:
+        if node not in visited:
+            component = []
+            dfs(node, visited)
+            communities.append(component)
     return communities
 
-def modularity(graph, communities):
-    modularity_score = 0
+# Function to find the minimum number of edges to remove to form the communities
+def min_edges_to_remove(graph, communities):
+    edges_to_remove = 0
     for community in communities:
-        for node in community:
-            for neighbor in graph.edges[node]:
-                if neighbor in community:
-                    modularity_score += 1
+        subgraph = {node: graph[node] for node in community}
+        edges_within_community = sum(len(subgraph[node]) for node in community) // 2
+        edges_to_remove += len(community) - edges_within_community
+    return edges_to_remove
 
-    return modularity_score
+# Function to check if two papers belong to the same community
+def same_community(communities, paper_1, paper_2):
+    for community in communities:
+        if paper_1 in community and paper_2 in community:
+            return True
+    return False
