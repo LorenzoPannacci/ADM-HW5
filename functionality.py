@@ -128,81 +128,57 @@ def shortest_ordered_walk_v2(graph, authors_a, a_1, a_n):
 
 #4
 
-class Graph:
-    def __init__(self):
-        self.nodes = set()
-        self.edges = []
-
-    def add_node(self, node):
-        self.nodes.add(node)
-
-    def add_edge(self, node1, node2):
-        self.edges.append((node1, node2))
-        self.edges.append((node2, node1))  # Assuming undirected graph
-
-    def get_neighbors(self, node):
-        neighbors = set()
-        for edge in self.edges:
-            if edge[0] == node:
-                neighbors.add(edge[1])
-        return neighbors
 
 
-def subgraph_nodes(graph, top_authors):
-    subgraph = Graph()
-    subgraph.nodes = {node for node in graph.nodes if node in top_authors}
-    subgraph.edges = [(node1, node2) for node1, node2 in graph.edges if node1 in top_authors and node2 in top_authors]
-    return subgraph
+def build_adjacency_list(graph):
+    adjacency_list = {}
+    for node in graph.nodes():
+        adjacency_list[node] = list(graph.neighbors(node))
+    return adjacency_list
 
-def remove_edges(graph, edges):
-    modified_graph = graph.copy()
-    modified_graph.edges = [edge for edge in modified_graph.edges if edge not in edges]
-    return modified_graph
+def dfs(adj_list, start, end, visited):
+    visited.add(start)
+    if start == end:
+        return True
+    for neighbor in adj_list[start]:
+        if neighbor not in visited:
+            if dfs(adj_list, neighbor, end, visited):
+                return True
+    return False
 
-def has_path(graph, start, end):
-    visited = set()
-    queue = [start]
+def min_edges_to_disconnect(graph, start_node, end_node, pass_through_nodes):
+    adjacency_list = build_adjacency_list(graph)
+    edges_removed = 0
 
-    while queue:
-        current_node = queue.pop(0)
-        print(f"Current node: {current_node}")
-        print(f"Queue: {queue}")
+    for edge in pass_through_nodes:
+        if edge not in adjacency_list:
+            return -1  # One or more nodes in pass_through_nodes are not present in the graph
 
-        if current_node == end:
-            print("Path found!")
-            return True  # There's a path between start and end
+    # Check if start_node and end_node are in the graph
+    if start_node not in adjacency_list or end_node not in adjacency_list:
+        return -1
 
-        visited.add(current_node)
-        for edge in graph.edges:
-            if edge[0] == current_node and edge[1] not in visited:
-                queue.append(edge[1])
+    # Check if the graph is already disconnected
+    if not dfs(adjacency_list, start_node, end_node, set()):
+        return 0
 
-    print("No path found.")
-    return False  # There's no path between start and end
+    # Attempt to disconnect the graph by removing edges involving pass_through_nodes
+    disconnected = False
+    for edge in pass_through_nodes:
+        if edge in adjacency_list[start_node]:
+            adjacency_list[start_node].remove(edge)
+            adjacency_list[edge].remove(start_node)
+            edges_removed += 1
 
+            # Check if the graph is disconnected after removing the edge
+            if not dfs(adjacency_list, start_node, end_node, set()):
+                disconnected = True
+                break
 
-def min_edges_to_disconnect(graph, author_a, author_b, top_authors):
-    # Create a subgraph with only the top authors
-    subgraph = subgraph_nodes(graph, top_authors)
-    print(f"Subgraph nodes: {subgraph.nodes}")
-    print(f"Subgraph edges: {subgraph.edges}")
-
-    edges_to_remove = subgraph.edges
-    print(f"Edges to remove: {edges_to_remove}")
-
-    min_edges = 0
-    while has_path(subgraph, author_a, author_b):
-        print(f"Path exists between {author_a} and {author_b}")
-        if not edges_to_remove:
-            return float('inf')  # No possible disconnection path found
-
-        # Remove the "most important" edge
-        edge = edges_to_remove.pop()
-        subgraph = remove_edges(subgraph, [edge])
-        min_edges += 1
-        print(f"Removed edge {edge}. Min edges: {min_edges}")
-
-    return min_edges
+    if disconnected:
+        return edges_removed
+    else:
+        return -1  # Couldn't disconnect the graph
 
 
 
