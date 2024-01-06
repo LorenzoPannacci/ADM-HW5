@@ -109,7 +109,6 @@ def calculate_centralities(graph, graph_name, node):
     }
 
 # 2.1.3
-
 def dijkstra_shortest_path(graph, start, end):
     # initialize dictionaries to track distances and predecessors
     distances = {node: float('inf') for node in graph}
@@ -195,26 +194,45 @@ def shortest_ordered_walk(graph, authors_a, a_1, a_n, top_authors):
 
     shortest_path.append(a_n)
 
-    return shortest_path
+    # now we have to build the paper informations about those paths
+    traversed_papers = []
+    id_list = []
+    for i in range(len(shortest_path) - 1):
+        start_node = shortest_path[i]
+        end_node = shortest_path[i + 1]
+
+        # create every edge we traversed
+        edge = (start_node, end_node)
+
+        # get all the papers involved
+        for paper in graph.edges[edge]["papers"]:
+
+            # do not insert duplicates
+            if paper["id"] not in id_list:
+                traversed_papers.append(paper)
+                id_list.append(paper["id"])
+
+    return shortest_path, traversed_papers
 
 #2.1.4
 # to work on this problem we create our own Graph class
 class Graph:
     def __init__(self):
         self.nodes = set()
-        self.edges = []
+        self.edges = set()
 
-# create subgraph from original graph and list of authors to keep
-def subgraph_nodes(graph, top_authors):
+# create graph
+def init_graph(graph):
     subgraph = Graph()
-    subgraph.nodes = {node for node in graph.nodes if node in top_authors}
-    subgraph.edges = [(node1, node2) for node1, node2 in graph.edges if node1 in top_authors and node2 in top_authors]
+    subgraph.nodes = {node for node in graph.nodes}
+    subgraph.edges = {(node1, node2) for node1, node2 in graph.edges}
     return subgraph
 
 # remove list of edges
 def remove_edges(graph, edges):
-    modified_graph = graph.copy()
-    modified_graph.edges = [edge for edge in modified_graph.edges if edge not in edges]
+    modified_graph = Graph()
+    modified_graph.nodes = graph.nodes
+    modified_graph.edges = {edge for edge in graph.edges if edge not in edges}
     return modified_graph
 
 # find if graph has path from start to end
@@ -235,15 +253,16 @@ def has_path(graph, start, end):
     return False  # There's no path between start and end
 
 def min_edges_to_disconnect(graph, author_a, author_b, top_authors):
-    # Create a subgraph with only the top authors
-    subgraph = subgraph_nodes(graph, top_authors)
+    # create a subgraph with only the top authors
+    graph = create_subgraph(graph, top_authors)
+
+    # convert to our type of graph
+    subgraph = init_graph(graph)
 
     edges_to_remove = subgraph.edges
 
     min_edges = 0
     while has_path(subgraph, author_a, author_b):
-        if not edges_to_remove:
-            return float('inf')  # No possible disconnection path found
 
         # Remove the "most important" edge
         edge = edges_to_remove.pop()
