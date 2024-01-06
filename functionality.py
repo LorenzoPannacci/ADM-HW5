@@ -127,9 +127,6 @@ def shortest_ordered_walk_v2(graph, authors_a, a_1, a_n):
 
 
 #4
-
-
-
 def build_adjacency_list(graph):
     adjacency_list = {}
     for node in graph.nodes():
