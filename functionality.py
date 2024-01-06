@@ -209,7 +209,7 @@ def min_edges_to_remove(graph, communities):
     for community in communities:
         subgraph = {node: graph[node] for node in community}
         edges_within_community = sum(len(subgraph[node]) for node in community) // 2
-        edges_to_remove += len(community) - edges_within_community
+        edges_to_remove += edges_within_community-len(community) 
     return edges_to_remove
 
 # Function to check if two papers belong to the same community
