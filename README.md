@@ -22,5 +22,5 @@ Here we provide the link for an easier access to the notebook: https://nbviewer.
   * `savecsv.py`: this script converts the citation graph file to a CSV adjacency matrix
   * `clq.py`: this script applies BFS to evaluate the average shortest path in the citation graph
 * __`graphs/`__: is a folder containing the `citation graph` and the `collaboration graph` in the .pickle format, permitting to save a networkx graphs as files and load it later without have to compute them again
-* __`images/`__:  is a folder containing tree images, one for each question of the CLQ
+* __`images/`__:  is a folder containing three images, one for each question of the CLQ
 * __`CommandLine.sh`__: a bash script that solves the CLQ question

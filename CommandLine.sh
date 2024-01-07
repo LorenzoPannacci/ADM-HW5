@@ -120,4 +120,4 @@ elif [ $1 -eq 3 ]; then
 	else
 		echo "Error: num_pairs is not a valid number."
 	fi
-
+fi
