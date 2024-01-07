@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 import networkx as nx
-import functionality
+from functions import functionality
 import math
 import numpy as np
 from itertools import product
