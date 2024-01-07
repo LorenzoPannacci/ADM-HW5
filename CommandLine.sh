@@ -92,7 +92,7 @@ elif [ $1 -eq 3 ]; then
 	from clq import total_shortest_path
 
 	# Load the graph from the pickle file
-	with open('/mnt/c/Users/rebbi/Desktop/Magistrale/ADM/ADM-HW5/graphs/citation-graph.pickle', 'rb') as f:
+	with open('graphs/citation-graph.pickle', 'rb') as f:
 		loaded_graph = pickle.load(f)
 
 	# Create a NetworkX graph from the loaded data

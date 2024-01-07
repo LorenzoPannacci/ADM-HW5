@@ -1,12 +1,4 @@
 import networkx as nx
-import pickle
-
-# Load the graph from the .pickle file
-with open(r"/mnt/c/Users/rebbi/Desktop/Magistrale/ADM/ADM-HW5/graphs/citation-graph.pickle", 'rb') as f:
-    loaded_graph = pickle.load(f)
-
-# Create a NetworkX graph from the loaded data
-graph = nx.Graph(loaded_graph)
 
 # Function to find the average shortest path
 def total_shortest_path(graph):
