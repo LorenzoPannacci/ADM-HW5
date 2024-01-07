@@ -2,6 +2,7 @@ import networkx as nx
 import math
 from collections import deque
 import heapq
+import random
 
 # 2.1.1
 def graph_features(graph, graph_name):
@@ -215,126 +216,125 @@ def shortest_ordered_walk(graph, authors_a, a_1, a_n, top_authors):
     return shortest_path, traversed_papers
 
 #2.1.4
-# to work on this problem we create our own Graph class
-class Graph:
-    def __init__(self):
-        self.nodes = set()
-        self.edges = set()
+def BFS_visit(graph, start_node):
+    # start data structures
+    visited = {}
+    queue = deque()
 
-# create graph
-def init_graph(graph):
-    subgraph = Graph()
-    subgraph.nodes = {node for node in graph.nodes}
-    subgraph.edges = {(node1, node2) for node1, node2 in graph.edges}
-    return subgraph
+    # insert starting node
+    queue.append(start_node)
+    visited[start_node] = True
 
-# remove list of edges
-def remove_edges(graph, edges):
-    modified_graph = Graph()
-    modified_graph.nodes = graph.nodes
-    modified_graph.edges = {edge for edge in graph.edges if edge not in edges}
-    return modified_graph
+    # cycle trough the queue
+    while len(queue) != 0:
+        # get current node
+        current_node = queue.popleft()
 
-# find if graph has path from start to end
-def has_path(graph, start, end):
-    visited = set()
-    queue = [start]
+        # find all the neighbors of the current node
+        for node in graph.neighbors(current_node):
+                if node not in visited.keys():
+                    # insert them in the queue if haven't already visited
+                    queue.append(node)
+                    visited[node] = True
 
-    while queue:
-        current_node = queue.pop(0)
-        if current_node == end:
-            return True  # There's a path between start and end
+    return visited
 
-        visited.add(current_node)
-        for edge in graph.edges:
-            if edge[0] == current_node and edge[1] not in visited:
-                queue.append(edge[1])
+def weakly_connected_components(graph):
+    # since we are searching for weakly connected components we convert the graph
+    # into a undirected graph
+    graph = nx.Graph(graph)
 
-    return False  # There's no path between start and end
-
-def min_edges_to_disconnect(graph, author_a, author_b, top_authors):
-    # create a subgraph with only the top authors
-    graph = create_subgraph(graph, top_authors)
-
-    # convert to our type of graph
-    subgraph = init_graph(graph)
-
-    edges_to_remove = subgraph.edges
-
-    min_edges = 0
-    while has_path(subgraph, author_a, author_b):
-
-        # Remove the "most important" edge
-        edge = edges_to_remove.pop()
-        subgraph = remove_edges(subgraph, [edge])
-        min_edges += 1
-
-    return min_edges
-
-# 2.1.5
-class Graph:
-    def __init__(self):
-        self.nodes = set()
-        self.edges = {}  # Storing edges as a dictionary of sets
-
-    def add_node(self, node):
-        self.nodes.add(node)
-        self.edges[node] = set()  # Initialize edges for the node
-
-    def add_edge(self, node1, node2):
-        if node1 in self.edges and node2 in self.edges:
-            self.edges[node1].add(node2)
-            self.edges[node2].add(node1)  # Assuming undirected graph
-
-def extract_communities(graph, paper_1, paper_2, top_authors):
-    top_authors_data = [author for author in top_authors if author in graph.nodes]
-
-    subgraph = Graph()
-    for author in top_authors_data:
-        subgraph.add_node(author)
-        if isinstance(graph.edges, dict) and author in graph.edges:
-            neighbors = graph.edges[author]
-            if isinstance(neighbors, set):
-                for neighbor in neighbors:
-                    if neighbor in top_authors_data:
-                        subgraph.add_edge(author, neighbor)
-
-    if not subgraph.nodes:
-        return "The subgraph has no nodes."
-
-    communities = greedy_modularity_communities(subgraph)
-
-    edges_to_remove = modularity(subgraph, communities)
-
-    return edges_to_remove
-
-def greedy_modularity_communities(graph):
+    # we do BFS visits to find connected components and continue until we have
+    # no nodes left
     communities = []
-    nodes = list(graph.nodes)
-    while nodes:
-        node = nodes.pop(0)
-        neighbors = graph.edges[node]
-        community = {node}
-        previous_community_length = 0
+    while len(graph.nodes) != 0:
+        # select the starting node for the BFS at random
+        random_node = random.choice(list(graph.nodes()))
 
-        while len(community) > previous_community_length:
-            previous_community_length = len(community)
-            for neighbor in list(neighbors):
-                if all(neigh in community or neigh not in graph.edges for neigh in graph.edges[neighbor]):
-                    community.add(neighbor)
-                    neighbors |= graph.edges[neighbor]
+        # get the list of visited nodes
+        community = set(BFS_visit(graph, random_node).keys())
 
+        # insert the new community into the community list
         communities.append(community)
-        nodes = [n for n in nodes if n not in community]
-
+        
+        # remove the nodes in the community from the graph
+        graph.remove_nodes_from(community)
+    
     return communities
 
-def modularity(graph, communities):
-    modularity_score = 0
-    for community in communities:
-        for node in community:
-            for neighbor in graph.edges[node]:
-                if neighbor in community:
-                    modularity_score += 1
+def girvan_newman(graph, n_communities):
+    # calculate the current communities as the weakly connected components
+    communities = weakly_connected_components(graph)
 
-    return modularity_score
+    # continue until the desidered number of communities is reached
+    n_edges_removed = 0
+    while len(communities) < n_communities:
+
+        # calculate the betweenness centrality of every edge in the graph
+        edge_betweenness = nx.edge_betweenness_centrality(graph)
+
+        # find the edge to remove as the one with the highest score
+        # in case there is more than one remove all the nodes with the same score
+        max_score = max(edge_betweenness.values())
+
+        # get and remove all the edges with the max score
+        for edge, value in edge_betweenness.items():
+            if value == max_score:
+                graph.remove_edge(*edge)
+                n_edges_removed += 1
+
+        # adjurn the communities list
+        communities = list(weakly_connected_components(graph))
+
+    # when reached the desidered number of communities end the algorithm
+    return n_edges_removed, communities
+
+def functionality_5(graph, n_nodes, n_communities, paper_1, paper_2):
+    # create subgraph
+    graph = nx.DiGraph(create_subgraph(graph, n_nodes))
+
+    # call girvan newman algorithm
+    n_edges_removed, communities = girvan_newman(graph, n_communities)
+
+    # search if the two papers are in the same community
+    same_community = False
+    for community in communities:
+        if paper_1 in community and paper_2 in community:
+            same_community = True
+    
+    return graph, n_edges_removed, communities, same_community
+
+# 2.1.5
+# Function to find communities in the graph using the connected components algorithm
+def find_communities(graph):
+    def dfs(node, visited):
+        visited.add(node)
+        component.append(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                dfs(neighbor, visited)
+
+    visited = set()
+    communities = []
+    for node in graph:
+        if node not in visited:
+            component = []
+            dfs(node, visited)
+            communities.append(component)
+    return communities
+
+# Function to find the minimum number of edges to remove to form the communities
+def min_edges_to_remove(graph, communities):
+    edges_to_remove = 0
+    for community in communities:
+        subgraph = {node: graph[node] for node in community}
+        edges_within_community = sum(len(subgraph[node]) for node in community) // 2
+        edges_to_remove += edges_within_community-len(community) 
+    return edges_to_remove
+
+# Function to check if two papers belong to the same community
+def same_community(communities, paper_1, paper_2):
+    for community in communities:
+        if paper_1 in community and paper_2 in community:
+            return True
+    return False

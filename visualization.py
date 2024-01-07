@@ -2,6 +2,10 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 import networkx as nx
 import functionality
+import math
+import numpy as np
+from itertools import product
+import matplotlib
 
 def visualization_1(input_dict):
     fig, axs = plt.subplots(2, 2, height_ratios=[1, 3], figsize=(12, 8))
@@ -128,7 +132,7 @@ def visualization_3(subgraph, input):
         table = axs[0].table(cellText=table_data, loc='center', cellLoc='left')
 
         # make column names bold
-        for (row, col), cell in table.get_celld().items():
+        for (row, _), cell in table.get_celld().items():
             if row == 0:
                 cell.set_text_props(fontproperties=FontProperties(weight='bold'))
 
@@ -182,5 +186,118 @@ def visualization_3(subgraph, input):
 
         #
         plt.suptitle("Visualization of shortest walk", fontsize=16)
+
+    plt.show()
+
+def visualization_5(subgraph, result, paper_1, paper_2):
+
+    fig, axs = plt.subplots(5, 1, figsize=(16, 48), height_ratios=[1, 4, 4, 4, 4])
+
+    # get results of functionality
+    result_graph, n_edges_removed, community_list, same_community = result
+    
+    # get number of removed link
+    text = "To create communities we have removed " + str(n_edges_removed) + " edges."
+    axs[0].axis('off')
+    axs[0].text(0.5, 0.5, text, ha='center', va='center', fontsize=12, color='black')
+
+    # community tables
+
+    max_length = 100
+    table_data = [["Size","Nodes"]]
+    for community in community_list:
+        text = str(community).strip("{}")
+        if len(text) > max_length:
+            text = text[:max_length] + "..."
+        
+        table_data.append([len(community), text])
+
+    table = axs[1].table(cellText=table_data, loc='center', cellLoc='center')
+
+    # make column names bold
+    for (row, _), cell in table.get_celld().items():
+        cell.set_text_props(wrap=True)
+
+        if row == 0:
+            cell.set_text_props(fontproperties=FontProperties(weight='bold'))
+
+    # format the table
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.scale(1.5, 1.5)
+    table.auto_set_column_width(col=list(range(len(table_data))))
+
+    # remove axis
+    axs[1].axis('off')
+
+    # get original graph
+    axs[2].set_title("Original graph")
+
+    # plot graph
+    layout = nx.spring_layout(subgraph)
+    axs[2] = nx.draw(subgraph, pos = layout, ax=axs[2])
+
+    # get communities graph
+    axs[3].set_title("Communities graph")
+
+    for node in result_graph.nodes:
+        for index, community in enumerate(community_list):
+            if node in community:
+                result_graph.nodes[node]['community'] = index
+
+    # organise communities:
+    communities = {}
+    for node, data in result_graph.nodes(data=True):
+        c = data['community']
+        if c not in communities:
+            communities[c] = [node]
+        else:
+            communities[c].append(node)
+            
+    # build individual positions for each community:
+    # add offsets to move clusters around
+
+    n_offsets = math.ceil(math.log(len(communities), 2))
+
+    coords = np.linspace(0, 16, n_offsets)
+    offsets = list(product(coords, coords))
+
+    pos = {}
+    for offset, nodes in zip(offsets, communities.values()):
+        community_position = nx.spring_layout(result_graph.subgraph(nodes), center=offset, scale = 3)
+        pos = {**pos, **community_position}
+
+    # Create a dictionary to map nodes to their respective communities
+    node_community = {node: i for i, comm in enumerate(community_list) for node in comm}
+
+    # Create a list of colors for nodes based on their community
+    node_colors = [node_community[node] for node in result_graph.nodes()]
+
+    nx.draw(result_graph, pos, node_color=node_colors, cmap=matplotlib.colormaps.get_cmap('viridis'), ax = axs[3])
+
+    # final graph
+
+    axs[4].set_title("Identify paper_1 paper_2")
+
+    for community in community_list:
+        if paper_1 in community:
+            community_1 = community
+            break
+
+    for community in community_list:
+        if paper_2 in community:
+            community_2 = community
+            break
+    
+    node_colors = []
+    for node in result_graph.nodes():
+        if node in community_1 and same_community:
+            node_colors.append("darkblue")
+        elif not same_community and (node in community_1 or node in community_2):
+            node_colors.append("red")
+        else:
+            node_colors.append("#1f77b4")
+
+    nx.draw(result_graph, pos, node_color=node_colors, ax = axs[4])
 
     plt.show()
