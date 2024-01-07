@@ -216,55 +216,48 @@ def shortest_ordered_walk(graph, authors_a, a_1, a_n, top_authors):
     return shortest_path, traversed_papers
 
 # 2.1.4
-def build_adjacency_list(graph):
-    adjacency_list = {}
-    for node in graph.nodes():
-        adjacency_list[node] = list(graph.neighbors(node))
-    return adjacency_list
+def dijkstra(G, start_node, end_node, nodes_to_consider):
+    # Initialize node weights
+    distances = {node: float('inf') for node in G}
+    distances[start_node] = 0
 
-def dfs(adj_list, start, end, visited):
-    visited.add(start)
-    if start == end:
-        return True
-    for neighbor in adj_list[start]:
-        if neighbor not in visited:
-            if dfs(adj_list, neighbor, end, visited):
-                return True
-    return False
+    # Initialize predecessors
+    predecessors = {node: None for node in G}
 
-def min_edges_to_disconnect(graph, start_node, end_node, pass_through_nodes):
-    adjacency_list = build_adjacency_list(graph)
-    edges_removed = 0
+    unvisited_nodes = set(nodes_to_consider)  # Consider only nodes provided
 
-    for edge in pass_through_nodes:
-        if edge not in adjacency_list:
-            return -1  # One or more nodes in pass_through_nodes are not present in the graph
+    while unvisited_nodes:
+        current_node = min(unvisited_nodes, key=lambda node: distances[node])
 
-    # Check if start_node and end_node are in the graph
-    if start_node not in adjacency_list or end_node not in adjacency_list:
-        return -1
+        if distances[current_node] == float('inf'):
+            break
 
-    # Check if the graph is already disconnected
-    if not dfs(adjacency_list, start_node, end_node, set()):
-        return 0
+        unvisited_nodes.remove(current_node)
 
-    # Attempt to disconnect the graph by removing edges involving pass_through_nodes
-    disconnected = False
-    for edge in pass_through_nodes:
-        if edge in adjacency_list[start_node]:
-            adjacency_list[start_node].remove(edge)
-            adjacency_list[edge].remove(start_node)
-            edges_removed += 1
+        for neighbor, edge_weight in G[current_node].items():
+            total_weight = distances[current_node] + edge_weight['weight']
 
-            # Check if the graph is disconnected after removing the edge
-            if not dfs(adjacency_list, start_node, end_node, set()):
-                disconnected = True
-                break
+            if total_weight < distances[neighbor]:
+                distances[neighbor] = total_weight
+                predecessors[neighbor] = current_node
 
-    if disconnected:
-        return edges_removed
-    else:
-        return -1  # Couldn't disconnect the graph
+    # Construct the shortest path
+    shortest_path = []
+    node = end_node
+    while node is not None:
+        shortest_path.insert(0, node)
+        node = predecessors[node]
+
+    return shortest_path
+
+def min_edges_to_disconnect(G, start_node, end_node, nodes_to_consider):
+    # Find the shortest path between start_node and end_node using only nodes_to_consider
+    shortest_path = dijkstra(G, start_node, end_node, nodes_to_consider)
+
+    # Count the number of connections in the path
+    num_edges_to_remove = len(shortest_path) - 1 if shortest_path else 0
+
+    return num_edges_to_remove
 
 #2.1.5
 def BFS_visit(graph, start_node):
