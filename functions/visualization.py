@@ -189,6 +189,41 @@ def visualization_3(subgraph, input):
 
     plt.show()
 
+def visualization_4(n_removed_edges, original_graph, cut_graph, authorA, authorB):
+
+    fig, axs = plt.subplots(3, 1, figsize=(16, 16), height_ratios=[0.5, 4, 4])
+    
+    # get number of removed link
+    text = "To do the mincut there have been disconnected " + str(n_removed_edges) + " links."
+    axs[0].axis('off')
+    axs[0].text(0.5, 0.5, text, ha='center', va='center', fontsize=12, color='black')
+
+    # get original graph
+    axs[1].set_title("Original graph")
+
+    # plot graph
+    pos = nx.spring_layout(original_graph)
+    axs[1] = nx.draw(original_graph, pos = pos, ax=axs[1], node_size = 100)
+
+    # get cut graph
+    axs[2].set_title("Plot of min-cut")
+
+    # highlight the two nodes
+
+    node_colors = []
+    for node in cut_graph.nodes():
+        if node == authorA or node == authorB:
+            node_colors.append("red")
+        else:
+            node_colors.append("#1f77b4")
+
+    axs[2] = nx.draw(cut_graph, pos, node_color=node_colors, ax = axs[2], node_size = 100)
+
+    # make red nodes on the foreground
+    axs[2] = nx.draw_networkx_nodes(cut_graph, pos, nodelist=[authorA, authorB], node_color='red', ax = axs[2], node_size = 100)
+
+    plt.show()
+
 def visualization_5(subgraph, result, paper_1, paper_2):
 
     fig, axs = plt.subplots(5, 1, figsize=(16, 48), height_ratios=[1, 4, 4, 4, 4])
@@ -235,7 +270,7 @@ def visualization_5(subgraph, result, paper_1, paper_2):
 
     # plot graph
     layout = nx.spring_layout(subgraph)
-    axs[2] = nx.draw(subgraph, pos = layout, ax=axs[2])
+    axs[2] = nx.draw(subgraph, pos = layout, ax=axs[2], node_size = 100)
 
     # get communities graph
     axs[3].set_title("Communities graph")
@@ -273,11 +308,11 @@ def visualization_5(subgraph, result, paper_1, paper_2):
     # Create a list of colors for nodes based on their community
     node_colors = [node_community[node] for node in result_graph.nodes()]
 
-    nx.draw(result_graph, pos, node_color=node_colors, cmap=matplotlib.colormaps.get_cmap('viridis'), ax = axs[3])
+    nx.draw(result_graph, pos, node_color=node_colors, cmap=matplotlib.colormaps.get_cmap('viridis'), ax = axs[3], node_size = 100)
 
     # final graph
 
-    axs[4].set_title("Identify paper_1 paper_2")
+    axs[4].set_title("Identify paper_1 paper_2 communities")
 
     for community in community_list:
         if paper_1 in community:
@@ -292,12 +327,12 @@ def visualization_5(subgraph, result, paper_1, paper_2):
     node_colors = []
     for node in result_graph.nodes():
         if node in community_1 and same_community:
-            node_colors.append("darkblue")
+            node_colors.append("green")
         elif not same_community and (node in community_1 or node in community_2):
             node_colors.append("red")
         else:
             node_colors.append("#1f77b4")
 
-    nx.draw(result_graph, pos, node_color=node_colors, ax = axs[4])
+    nx.draw(result_graph, pos, node_color=node_colors, ax = axs[4], node_size = 100)
 
     plt.show()
