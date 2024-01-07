@@ -4,7 +4,7 @@
 * Lorenzo Pannacci - 1948926
 * Rebecca Conti - 1896168
 * Filippo Parlanti - 2136988
-* ADD YOUR NAME HERE
+* Edo Fejzic
 
 This repository contains the submission of Group #11 of the fifth homework for the course "Algorithmic Methods of Data Mining", Academic year 2023–2024.
 

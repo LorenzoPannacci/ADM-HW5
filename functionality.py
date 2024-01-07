@@ -1,7 +1,10 @@
 import networkx as nx
+import math
 from collections import deque
+import heapq
+import random
 
-#1
+# 2.1.1
 def graph_features(graph, graph_name):
     # Number of nodes in the graph
     nodes = graph.number_of_nodes()
@@ -13,34 +16,83 @@ def graph_features(graph, graph_name):
     density = nx.density(graph)
 
     # Graph degree distribution
-    degree_distro = dict(graph.degree())
+    # this is different based on the type of the graph
+    if graph_name == "Citation Graph":
+        # for citation graph we have to do both distinguish between in-degree and out-degree
+        in_degrees = sorted([graph.in_degree(node) for node in graph.nodes()])
+
+        in_degree_distro = {}
+        for degree in in_degrees:
+            if degree in in_degree_distro:
+                in_degree_distro[degree] += 1
+            else:
+                in_degree_distro[degree] = 1
+        
+        out_degrees = sorted([graph.out_degree(node) for node in graph.nodes()])
+
+        out_degree_distro = {}
+        for degree in out_degrees:
+            if degree in out_degree_distro:
+                out_degree_distro[degree] += 1
+            else:
+                out_degree_distro[degree] = 1
+
+    else:
+        # collaboration graph is undirected
+
+        degrees = sorted([graph.degree(node) for node in graph.nodes()])
+
+        degree_distro = {}
+        for degree in degrees:
+            if degree in degree_distro:
+                degree_distro[degree] += 1
+            else:
+                degree_distro[degree] = 1
 
     # Average degree of the graph
-    avg_degree = sum(dict(graph.degree()).values()) / nodes
+    avg_degree = 2 * edges / nodes
 
     # Calculating 95th percentile for graph hubs
-    degree_values = sorted(list(dict(graph.degree()).values()))
-    percentile_95 = degree_values[int(0.95 * len(degree_values))]
+    degrees = sorted([graph.degree(node) for node in graph.nodes()])
+    percentile_95 = degrees[math.ceil(0.95 * len(degrees))]
 
     # Finding graph hubs
     graph_hubs = [node for node, degree in dict(graph.degree()).items() if degree > percentile_95]
 
     # Determining whether the graph is dense or sparse
-    graph_type = "Dense" if density >= 0.5 else "Sparse"
+    graph_type = "Dense" if density > 0.5 else "Sparse"
 
     # Returning the computed features
-    return {
-        "Graph Name": graph_name,
-        "Number of Nodes": nodes,
-        "Number of Edges": edges,
-        "Graph Density": density,
-        "Graph Degree Distribution": degree_distro,
-        "Average Degree": avg_degree,
-        "Graph Hubs": graph_hubs,
-        "Graph Type": graph_type
-    }
 
-#2
+    if graph_name == "Citation Graph":
+        # for citation graph
+
+        return {
+            "Graph Name": graph_name,
+            "Number of Nodes": nodes,
+            "Number of Edges": edges,
+            "Graph Density": density,
+            "Graph In-Degree Distribution": in_degree_distro,
+            "Graph Out-Degree Distribution": out_degree_distro,
+            "Average Degree": avg_degree,
+            "Graph Hubs": graph_hubs,
+            "Graph Type": graph_type
+        }
+
+    else:
+        # for collaboration graph
+        return {
+            "Graph Name": graph_name,
+            "Number of Nodes": nodes,
+            "Number of Edges": edges,
+            "Graph Density": density,
+            "Graph Degree Distribution": degree_distro,
+            "Average Degree": avg_degree,
+            "Graph Hubs": graph_hubs,
+            "Graph Type": graph_type
+        }
+
+# 2.1.2
 def calculate_centralities(graph, graph_name, node):
     # Calculate centrality measures
     betweenness = nx.betweenness_centrality(graph)[node]
@@ -51,159 +103,254 @@ def calculate_centralities(graph, graph_name, node):
     return {
         "Graph Name": graph_name,
         "Node": node,
-        "Betweenness": betweenness,
+        "Betweenness Centrality": betweenness,
         "PageRank": pagerank,
         "Closeness Centrality": closeness,
         "Degree Centrality": degree
     }
 
-#3
-
-import heapq
-
+# 2.1.3
 def dijkstra_shortest_path(graph, start, end):
-    # Initialize dictionaries to track distances and predecessors
+    # initialize dictionaries to track distances and predecessors
     distances = {node: float('inf') for node in graph}
     distances[start] = 0
     predecessors = {node: None for node in graph}
 
-    # Priority queue to keep track of nodes to explore
+    # priority queue to keep track of nodes to explore
     queue = [(0, start)]  # Tuple of (distance, node)
 
     while queue:
         current_distance, current_node = heapq.heappop(queue)
 
-        # If we've already explored this node with a shorter distance, ignore it
+        # if we've already explored this node with a shorter distance, ignore it
         if current_distance > distances[current_node]:
             continue
 
-        # If we've reached the destination node, construct the path and return it
+        # if we've reached the destination node, construct the path and return it
         if current_node == end:
             path = []
             while current_node is not None:
                 path.append(current_node)
                 current_node = predecessors[current_node]
-            return path[::-1]  # Reverse the path to get from start to end
+            return path[::-1]  # reverse the path to get from start to end
 
-        # Explore neighbors of the current node
+        # explore neighbors of the current node
         for neighbor, weight in graph[current_node].items():
-            distance = current_distance + weight
-            # If we've found a shorter path, update the information
+            distance = current_distance + weight["weight"]
+
+            # if we've found a shorter path, update the information
             if distance < distances[neighbor]:
                 distances[neighbor] = distance
                 predecessors[neighbor] = current_node
                 heapq.heappush(queue, (distance, neighbor))
 
-    return None  # If there's no path between start and end
+    # if there's no path between start and end return None
+    return None
 
+def create_subgraph(graph, top_authors):
+    # the first thing we have to do is to create the subgraph from the original graph
+    # and the number top authors to keep
 
-def shortest_ordered_walk_v2(graph, authors_a, a_1, a_n):
-    # Check if a_1 and a_n are in the graph
-    if a_1 not in graph or a_n not in graph:
-        return "One or more authors are not present in the graph."
+    # sort authors based on degree in descending order
+    sorted_authors_by_degree = sorted(nx.degree_centrality(graph).items(), key=lambda x: x[1], reverse=True)
 
-    # Create a list to store the ordered nodes
+    # and keep only the top
+    top_N_authors = sorted_authors_by_degree[:top_authors]
+
+    # save the top authors in a list without the centrality degree value
+    authors = [author[0] for author in top_N_authors]
+
+    # create subgraph from graph
+    graph = graph.subgraph(authors)
+
+    return graph
+
+def shortest_ordered_walk(graph, authors_a, a_1, a_n, top_authors):
+    # create subgraph from graph
+    graph = create_subgraph(graph, top_authors)
+
+    # create a list to store the ordered nodes to visit
     ordered_nodes = [a_1] + authors_a + [a_n]
 
-    # Initialize an empty list to store nodes in the shortest path
+    # check if all elements we have to go trough are inside the graph
+    for elem in ordered_nodes:
+        if elem not in graph:
+            return "One or more authors are not present in the graph."
+
+    # initialize an empty list to store nodes in the shortest path
     shortest_path = []
 
-    # Loop through the ordered_nodes list to find shortest paths between consecutive nodes
+    # loop through the ordered_nodes list to find shortest paths between consecutive nodes
     for i in range(len(ordered_nodes) - 1):
-        # Check if a path exists between the current node and the next node
-        if ordered_nodes[i + 1] not in graph[ordered_nodes[i]]:
-            return "There is no such path."
 
-        # Find the shortest path between current node (ordered_nodes[i]) and the next node (ordered_nodes[i + 1])
+        # find the shortest path between current node (ordered_nodes[i]) and the next node (ordered_nodes[i + 1])
         path = dijkstra_shortest_path(graph, ordered_nodes[i], ordered_nodes[i + 1])
 
-        # Add nodes from the path (excluding the last node) to the shortest_path list
-        shortest_path.extend(path[:-1] if path else [])
+        # if there is no path return error message
+        if path is None:
+            return "There is no such path."
 
-    # Append the final node a_n
+        # add nodes from the path to the shortest_path list
+        shortest_path.extend(path[:-1])
+
     shortest_path.append(a_n)
 
-    return shortest_path
+    # now we have to build the paper informations about those paths
+    traversed_papers = []
+    id_list = []
+    for i in range(len(shortest_path) - 1):
+        start_node = shortest_path[i]
+        end_node = shortest_path[i + 1]
 
+        # create every edge we traversed
+        edge = (start_node, end_node)
 
-#4
-def dijkstra(G, start_node, end_node, nodes_to_consider):
-    # Initialize node weights
-    distances = {node: float('inf') for node in G}
-    distances[start_node] = 0
+        # get all the papers involved
+        for paper in graph.edges[edge]["papers"]:
 
-    # Initialize predecessors
-    predecessors = {node: None for node in G}
+            # do not insert duplicates
+            if paper["id"] not in id_list:
+                traversed_papers.append(paper)
+                id_list.append(paper["id"])
 
-    unvisited_nodes = set(nodes_to_consider)  # Consider only nodes provided
+    return shortest_path, traversed_papers
 
-    while unvisited_nodes:
-        current_node = min(unvisited_nodes, key=lambda node: distances[node])
+# 2.1.4
+def build_adjacency_list(graph):
+    adjacency_list = {}
+    for node in graph.nodes():
+        adjacency_list[node] = list(graph.neighbors(node))
+    return adjacency_list
 
-        if distances[current_node] == float('inf'):
-            break
+def dfs(adj_list, start, end, visited):
+    visited.add(start)
+    if start == end:
+        return True
+    for neighbor in adj_list[start]:
+        if neighbor not in visited:
+            if dfs(adj_list, neighbor, end, visited):
+                return True
+    return False
 
-        unvisited_nodes.remove(current_node)
+def min_edges_to_disconnect(graph, start_node, end_node, pass_through_nodes):
+    adjacency_list = build_adjacency_list(graph)
+    edges_removed = 0
 
-        for neighbor, edge_weight in G[current_node].items():
-            total_weight = distances[current_node] + edge_weight['weight']
+    for edge in pass_through_nodes:
+        if edge not in adjacency_list:
+            return -1  # One or more nodes in pass_through_nodes are not present in the graph
 
-            if total_weight < distances[neighbor]:
-                distances[neighbor] = total_weight
-                predecessors[neighbor] = current_node
+    # Check if start_node and end_node are in the graph
+    if start_node not in adjacency_list or end_node not in adjacency_list:
+        return -1
 
-    # Construct the shortest path
-    shortest_path = []
-    node = end_node
-    while node is not None:
-        shortest_path.insert(0, node)
-        node = predecessors[node]
+    # Check if the graph is already disconnected
+    if not dfs(adjacency_list, start_node, end_node, set()):
+        return 0
 
-    return shortest_path
+    # Attempt to disconnect the graph by removing edges involving pass_through_nodes
+    disconnected = False
+    for edge in pass_through_nodes:
+        if edge in adjacency_list[start_node]:
+            adjacency_list[start_node].remove(edge)
+            adjacency_list[edge].remove(start_node)
+            edges_removed += 1
 
-def min_edges_to_disconnect(G, start_node, end_node, nodes_to_consider):
-    # Find the shortest path between start_node and end_node using only nodes_to_consider
-    shortest_path = dijkstra(G, start_node, end_node, nodes_to_consider)
+            # Check if the graph is disconnected after removing the edge
+            if not dfs(adjacency_list, start_node, end_node, set()):
+                disconnected = True
+                break
 
-    # Count the number of connections in the path
-    num_edges_to_remove = len(shortest_path) - 1 if shortest_path else 0
+    if disconnected:
+        return edges_removed
+    else:
+        return -1  # Couldn't disconnect the graph
 
-    return num_edges_to_remove
+#2.1.5
+def BFS_visit(graph, start_node):
+    # start data structures
+    visited = {}
+    queue = deque()
 
+    # insert starting node
+    queue.append(start_node)
+    visited[start_node] = True
 
+    # cycle trough the queue
+    while len(queue) != 0:
+        # get current node
+        current_node = queue.popleft()
 
+        # find all the neighbors of the current node
+        for node in graph.neighbors(current_node):
+                if node not in visited.keys():
+                    # insert them in the queue if haven't already visited
+                    queue.append(node)
+                    visited[node] = True
 
-#5
-# Function to find communities in the graph using the connected components algorithm
-def find_communities(graph):
-    def dfs(node, visited):
-        visited.add(node)
-        component.append(node)
-        for neighbor in graph[node]:
-            if neighbor not in visited:
-                dfs(neighbor, visited)
+    return visited
 
-    visited = set()
+def weakly_connected_components(graph):
+    # since we are searching for weakly connected components we convert the graph
+    # into a undirected graph
+    graph = nx.Graph(graph)
+
+    # we do BFS visits to find connected components and continue until we have
+    # no nodes left
     communities = []
-    for node in graph:
-        if node not in visited:
-            component = []
-            dfs(node, visited)
-            communities.append(component)
+    while len(graph.nodes) != 0:
+        # select the starting node for the BFS at random
+        random_node = random.choice(list(graph.nodes()))
+
+        # get the list of visited nodes
+        community = set(BFS_visit(graph, random_node).keys())
+
+        # insert the new community into the community list
+        communities.append(community)
+        
+        # remove the nodes in the community from the graph
+        graph.remove_nodes_from(community)
+    
     return communities
 
-# Function to find the minimum number of edges to remove to form the communities
-def min_edges_to_remove(graph, communities):
-    edges_to_remove = 0
-    for community in communities:
-        subgraph = {node: graph[node] for node in community}
-        edges_within_community = sum(len(subgraph[node]) for node in community) // 2
-        edges_to_remove += edges_within_community-len(community) 
-    return edges_to_remove
+def girvan_newman(graph, n_communities):
+    # calculate the current communities as the weakly connected components
+    communities = weakly_connected_components(graph)
 
-# Function to check if two papers belong to the same community
-def same_community(communities, paper_1, paper_2):
+    # continue until the desidered number of communities is reached
+    n_edges_removed = 0
+    while len(communities) < n_communities:
+
+        # calculate the betweenness centrality of every edge in the graph
+        edge_betweenness = nx.edge_betweenness_centrality(graph)
+
+        # find the edge to remove as the one with the highest score
+        # in case there is more than one remove all the nodes with the same score
+        max_score = max(edge_betweenness.values())
+
+        # get and remove all the edges with the max score
+        for edge, value in edge_betweenness.items():
+            if value == max_score:
+                graph.remove_edge(*edge)
+                n_edges_removed += 1
+
+        # adjurn the communities list
+        communities = list(weakly_connected_components(graph))
+
+    # when reached the desidered number of communities end the algorithm
+    return n_edges_removed, communities
+
+def functionality_5(graph, n_nodes, n_communities, paper_1, paper_2):
+    # create subgraph
+    graph = nx.DiGraph(create_subgraph(graph, n_nodes))
+
+    # call girvan newman algorithm
+    n_edges_removed, communities = girvan_newman(graph, n_communities)
+
+    # search if the two papers are in the same community
+    same_community = False
     for community in communities:
         if paper_1 in community and paper_2 in community:
-            return True
-    return False
+            same_community = True
+    
+    return graph, n_edges_removed, communities, same_community

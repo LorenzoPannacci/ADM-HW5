@@ -165,3 +165,5 @@ small_dataset.csv
 dataset/
 my_pagerank.pickle
 adjacency.csv
+graphs/collaboration-graph - Copia.pickle
+notes.ipynb
