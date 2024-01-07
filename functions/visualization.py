@@ -226,7 +226,7 @@ def visualization_4(n_removed_edges, original_graph, cut_graph, authorA, authorB
 
 def visualization_5(subgraph, result, paper_1, paper_2):
 
-    fig, axs = plt.subplots(5, 1, figsize=(16, 48), height_ratios=[1, 4, 4, 4, 4])
+    fig, axs = plt.subplots(5, 1, figsize=(16, 32), height_ratios=[1, 4, 8, 8, 8])
 
     # get results of functionality
     result_graph, n_edges_removed, community_list, same_community = result
@@ -251,8 +251,6 @@ def visualization_5(subgraph, result, paper_1, paper_2):
 
     # make column names bold
     for (row, _), cell in table.get_celld().items():
-        cell.set_text_props(wrap=True)
-
         if row == 0:
             cell.set_text_props(fontproperties=FontProperties(weight='bold'))
 
