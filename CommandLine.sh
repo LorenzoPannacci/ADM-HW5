@@ -86,22 +86,22 @@ elif [ $1 -eq 2 ]; then
 	
 elif [ $1 -eq 3 ]; then
 	# Load the graph from the pickle file in Python
-	result=$(python3 -c "
-	import pickle
-	import networkx as nx
-	from clq import total_shortest_path
+	result=$(python -c "
+import pickle
+import networkx as nx
+from scripts.clq import total_shortest_path
 
-	# Load the graph from the pickle file
-	with open('graphs/citation-graph.pickle', 'rb') as f:
-		loaded_graph = pickle.load(f)
+# Load the graph from the pickle file
+with open('graphs/citation-graph.pickle', 'rb') as f:
+	loaded_graph = pickle.load(f)
 
-	# Create a NetworkX graph from the loaded data
-	graph = nx.Graph(loaded_graph)
+# Create a NetworkX graph from the loaded data
+graph = nx.Graph(loaded_graph)
 
-	# Invoke the total_shortest_path function and print the result
-	result = total_shortest_path(graph)
-	print(result)
-	")
+# Invoke the total_shortest_path function and print the result
+result = total_shortest_path(graph)
+print(result)
+")
 	echo "$result"
 
 	# Retrieve values returned from the Python call
