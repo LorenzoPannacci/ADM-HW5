@@ -13,11 +13,13 @@ Here we provide the link for an easier access to the notebook: https://nbviewer.
 ## Contents
 
 * __`main.ipynb`__: the main notebook files. It contains all the answers and all the cells are already executed
-* __`functionality.py`__: a python script file that contains the funcionalities requested in the backend section
-* __`CommandLine.sh`__: a bash script that solves the CLQ question
+* __`functions/`__: a folder containing all the relevant functions used in the notebook divided into modules
+  * `functionality.py`: a python script file that contains the funcionalities requested in the backend section of part 2
+  * `functionality.py`: a python script file that contains the visualizations requested in the frontend section of part 2
 * __`scripts/`__: a folder containing some scripts used in the main notebook
-  * __`bash_script.sh`__: is used in data preprocessing (RQ1). In prticular, it splits the original database in smaller files
-  * __`savecsv.py`__: this script converts the citation graph file to a CSV adjacency matrix
-  * __`clq.py`__: this script applies BFS to evaluate the average shortest path in the citation graph
-* __`graphs/`__: is a folder containing the `citation graph` and the `collaboration graph`
+  * `bash_script.sh`: is used in data preprocessing (RQ1). In prticular, it splits the original database in smaller files. To be used it has to be moved in the same folder has the original .json file downloaded from Kaggle
+  * `savecsv.py`: this script converts the citation graph file to a CSV adjacency matrix
+  * `clq.py`: this script applies BFS to evaluate the average shortest path in the citation graph
+* __`graphs/`__: is a folder containing the `citation graph` and the `collaboration graph` in the .pickle format, permitting to save a networkx graphs as files and load it later without have to compute them again
 * __`images/`__:  is a folder containing tree images, one for each question of the CLQ
+* __`CommandLine.sh`__: a bash script that solves the CLQ question
