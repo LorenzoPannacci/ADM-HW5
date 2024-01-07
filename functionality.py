@@ -215,7 +215,58 @@ def shortest_ordered_walk(graph, authors_a, a_1, a_n, top_authors):
 
     return shortest_path, traversed_papers
 
-#2.1.4
+# 2.1.4
+def build_adjacency_list(graph):
+    adjacency_list = {}
+    for node in graph.nodes():
+        adjacency_list[node] = list(graph.neighbors(node))
+    return adjacency_list
+
+def dfs(adj_list, start, end, visited):
+    visited.add(start)
+    if start == end:
+        return True
+    for neighbor in adj_list[start]:
+        if neighbor not in visited:
+            if dfs(adj_list, neighbor, end, visited):
+                return True
+    return False
+
+def min_edges_to_disconnect(graph, start_node, end_node, pass_through_nodes):
+    adjacency_list = build_adjacency_list(graph)
+    edges_removed = 0
+
+    for edge in pass_through_nodes:
+        if edge not in adjacency_list:
+            return -1  # One or more nodes in pass_through_nodes are not present in the graph
+
+    # Check if start_node and end_node are in the graph
+    if start_node not in adjacency_list or end_node not in adjacency_list:
+        return -1
+
+    # Check if the graph is already disconnected
+    if not dfs(adjacency_list, start_node, end_node, set()):
+        return 0
+
+    # Attempt to disconnect the graph by removing edges involving pass_through_nodes
+    disconnected = False
+    for edge in pass_through_nodes:
+        if edge in adjacency_list[start_node]:
+            adjacency_list[start_node].remove(edge)
+            adjacency_list[edge].remove(start_node)
+            edges_removed += 1
+
+            # Check if the graph is disconnected after removing the edge
+            if not dfs(adjacency_list, start_node, end_node, set()):
+                disconnected = True
+                break
+
+    if disconnected:
+        return edges_removed
+    else:
+        return -1  # Couldn't disconnect the graph
+
+#2.1.5
 def BFS_visit(graph, start_node):
     # start data structures
     visited = {}
@@ -303,38 +354,3 @@ def functionality_5(graph, n_nodes, n_communities, paper_1, paper_2):
             same_community = True
     
     return graph, n_edges_removed, communities, same_community
-
-# 2.1.5
-# Function to find communities in the graph using the connected components algorithm
-def find_communities(graph):
-    def dfs(node, visited):
-        visited.add(node)
-        component.append(node)
-        for neighbor in graph[node]:
-            if neighbor not in visited:
-                dfs(neighbor, visited)
-
-    visited = set()
-    communities = []
-    for node in graph:
-        if node not in visited:
-            component = []
-            dfs(node, visited)
-            communities.append(component)
-    return communities
-
-# Function to find the minimum number of edges to remove to form the communities
-def min_edges_to_remove(graph, communities):
-    edges_to_remove = 0
-    for community in communities:
-        subgraph = {node: graph[node] for node in community}
-        edges_within_community = sum(len(subgraph[node]) for node in community) // 2
-        edges_to_remove += edges_within_community-len(community) 
-    return edges_to_remove
-
-# Function to check if two papers belong to the same community
-def same_community(communities, paper_1, paper_2):
-    for community in communities:
-        if paper_1 in community and paper_2 in community:
-            return True
-    return False
