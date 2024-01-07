@@ -32,7 +32,7 @@ Here we provide the link for an easier access to the notebook: https://nbviewer.
   * Citation graph - Filippo
   - Collaboration graph - Filippo
 * 2:
-  * Functionality 1 - Rebecca & Lorenzo
+  * Functionality 1 - Rebecca
   * Functionality 2 - Rebecca & Lorenzo
   * Functionality 3 - Rebecca & Lorenzo
   * Functionality 4 - Lorenzo
