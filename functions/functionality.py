@@ -215,6 +215,52 @@ def shortest_ordered_walk(graph, authors_a, a_1, a_n, top_authors):
 
     return shortest_path, traversed_papers
 
+def GPT_question_code(graph, authors_a, initial_node, end_node, N):
+    # modified input by human user
+    graph_data = create_subgraph(graph, N)
+
+    ###############################################################
+    # the following code has been written by chatGPT and has been #
+    # adjusted to make it work on the notebook                    #
+    ###############################################################
+
+    from collections import deque
+
+    # Function to perform BFS
+    def shortest_walk(graph, start, end, authors_a):
+        visited = {author: False for author in graph}
+        queue = deque([(start, [start])])  # Initialize the queue with the start node and path
+
+        while queue:
+            current, path = queue.popleft()
+            visited[current] = True
+
+            if current == end:
+                return path
+
+            for neighbor in graph[current]:
+                if not visited[neighbor]:
+                    new_path = path + [neighbor]
+                    queue.append((neighbor, new_path))
+
+        return "There is no such path."
+    
+    #############################################################
+    # here there were examples input but they have been removed #
+    #############################################################
+
+    # Calculate shortest walk
+    result = shortest_walk(graph_data, initial_node, end_node, authors_a)
+    if result != "There is no such path.":
+        # Extract papers from the graph data based on the computed path
+        papers_needed = [(result[i], result[i+1]) for i in range(len(result) - 1)]
+        print(f"Shortest walk: {result}")
+        print(f"Papers needed: {papers_needed}")
+    else:
+        print(result)
+
+    ###############################################################
+
 # 2.1.4
 # convert graph into adjacency matrix
 # converts also source and sink nodes into indices
