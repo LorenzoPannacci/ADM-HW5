@@ -85,9 +85,39 @@ elif [ $1 -eq 2 ]; then
 	}' $filepath | gnuplot -p -e "set title 'How the degree of citation vary among the graph nodes'; set xlabel 'Degree'; set ylabel 'Number of nodes'; plot '-' with linespoints , '';"
 	
 elif [ $1 -eq 3 ]; then
-	
-	# Launch the python script to evaluate the average shortest path using BFS  
-	python3 scripts/clq.py
-else
-	echo "Argument not valid"
-fi
+	# Load the graph from the pickle file in Python
+	result=$(python3 -c "
+	import pickle
+	import networkx as nx
+	from clq import total_shortest_path
+
+	# Load the graph from the pickle file
+	with open('graphs/citation-graph.pickle', 'rb') as f:
+		loaded_graph = pickle.load(f)
+
+	# Create a NetworkX graph from the loaded data
+	graph = nx.Graph(loaded_graph)
+
+	# Invoke the total_shortest_path function and print the result
+	result = total_shortest_path(graph)
+	print(result)
+	")
+	echo "$result"
+
+	# Retrieve values returned from the Python call
+	total_shortest_distances=$(echo "$result" | cut -d',' -f1)
+	num_pairs=$(echo "$result" | cut -d',' -f2)
+
+	# Check if num_pairs is a number before using it in an if condition
+	if [[ $num_pairs =~ ^[0-9]+$ ]]; then
+		if [ "$num_pairs" -ne 0 ]; then
+			# Calculate and print the result of total_shortest_distances/num_pairs
+			echo "The result of total_shortest_distances/num_pairs is:"
+			echo "$total_shortest_distances/$num_pairs" | bc -l
+		else
+			echo "Error: num_pairs is zero, cannot perform division."
+		fi
+	else
+		echo "Error: num_pairs is not a valid number."
+	fi
+

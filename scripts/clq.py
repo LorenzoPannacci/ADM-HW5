@@ -1,15 +1,7 @@
 import networkx as nx
-import pickle
-
-# Load the graph from the .pickle file
-with open("graphs/citation-graph.pickle", 'rb') as f:
-    loaded_graph = pickle.load(f)
-
-# Create a NetworkX graph from the loaded data
-graph = nx.Graph(loaded_graph)
 
 # Function to find the average shortest path
-def average_shortest_path(graph):
+def total_shortest_path(graph):
     total_shortest_distances = 0
     num_pairs = 0
 
@@ -22,11 +14,5 @@ def average_shortest_path(graph):
                 total_shortest_distances += distance
                 num_pairs += 1
 
-    # Calculate the average shortest path
-    average_shortest_distance = total_shortest_distances / num_pairs
-    return average_shortest_distance
-
-# Calculate the average shortest path using BFS
-avg_shortest_path = average_shortest_path(graph)
-print("Average shortest path using BFS:", avg_shortest_path)
+    return f"{total_shortest_distances},{num_pairs}"
 
