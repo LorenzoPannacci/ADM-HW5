@@ -24,3 +24,23 @@ Here we provide the link for an easier access to the notebook: https://nbviewer.
 * __`graphs/`__: is a folder containing the `citation graph` and the `collaboration graph` in the .pickle format, permitting to save a networkx graphs as files and load it later without have to compute them again
 * __`images/`__:  is a folder containing three images, one for each question of the CLQ
 * __`CommandLine.sh`__: a bash script that solves the CLQ question
+
+## Suddivision of exercises
+* 1:
+  * Preprocessing - Filippo
+  * Citation graph - Filippo
+  - Collaboration graph - Filippo
+* 2:
+  * Functionality 1 - Rebecca & Lorenzo
+  * Functionality 2 - Rebecca & Lorenzo
+  * Functionality 3 - Rebecca & Lorenzo
+  * Functionality 4 - Lorenzo
+  * Functionality 5 - Lorenzo
+  * Visualization 1 - Lorenzo
+  * Visualization 2 - Lorenzo
+  * Visualization 3 - Lorenzo
+  * Visualization 4 - Lorenzo
+  * Visualization 5 - Lorenzo
+* 3 - Lorenzo
+* 4 - Filippo & Rebecca
+* 5 - Edo
