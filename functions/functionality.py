@@ -216,48 +216,160 @@ def shortest_ordered_walk(graph, authors_a, a_1, a_n, top_authors):
     return shortest_path, traversed_papers
 
 # 2.1.4
-def dijkstra(G, start_node, end_node, nodes_to_consider):
-    # Initialize node weights
-    distances = {node: float('inf') for node in G}
-    distances[start_node] = 0
+# convert graph into adjacency matrix
+# converts also source and sink nodes into indices
+def setup_ff(graph, source_id, sink_id):
 
-    # Initialize predecessors
-    predecessors = {node: None for node in G}
+    # convert graph into adjacency matrix
+    adjacency_matrix = nx.adjacency_matrix(graph).todense().tolist()
 
-    unvisited_nodes = set(nodes_to_consider)  # Consider only nodes provided
+    # create map to convert indices into node IDs and back
+    index_map = {i: node for i, node in enumerate(graph.nodes)}
 
-    while unvisited_nodes:
-        current_node = min(unvisited_nodes, key=lambda node: distances[node])
+    # convert source and sink ids into indices
+    source_index = [key for key, value in index_map.items() if value == source_id][0]
+    sink_index = [key for key, value in index_map.items() if value == sink_id][0]
 
-        if distances[current_node] == float('inf'):
-            break
+    return adjacency_matrix, index_map, source_index, sink_index
 
-        unvisited_nodes.remove(current_node)
+# convert partitions of indicies back into node IDs
+def convert_results_ff(index_map, index_source_partition, index_sink_partition):
 
-        for neighbor, edge_weight in G[current_node].items():
-            total_weight = distances[current_node] + edge_weight['weight']
+    # conversion for source partition
+    id_source_partition = []
+    for elem in index_source_partition:
+        id_source_partition.append(index_map[elem])
 
-            if total_weight < distances[neighbor]:
-                distances[neighbor] = total_weight
-                predecessors[neighbor] = current_node
+    # conversion for sink partition
+    id_sink_partition = []
+    for elem in index_sink_partition:
+        id_sink_partition.append(index_map[elem])
+    
+    return id_source_partition, id_sink_partition
 
-    # Construct the shortest path
-    shortest_path = []
-    node = end_node
-    while node is not None:
-        shortest_path.insert(0, node)
-        node = predecessors[node]
+def cutted_graph_ff(graph, id_source_partition, id_sink_partition):
+    count_edges = 0
+    cutted_graph = graph.copy()
 
-    return shortest_path
+    for node_1 in id_source_partition:
+        for node_2 in id_sink_partition:
+            if graph.has_edge(node_1, node_2):
+                cutted_graph.remove_edge(node_1, node_2)
+                count_edges += 1
+    
+    return count_edges, cutted_graph
 
-def min_edges_to_disconnect(G, start_node, end_node, nodes_to_consider):
-    # Find the shortest path between start_node and end_node using only nodes_to_consider
-    shortest_path = dijkstra(G, start_node, end_node, nodes_to_consider)
+# breadth-first search to find a path from source to sink
+def BFS_ff(graph, source, sink, path_record):
+    # start data structures
+    queue = deque()
+    visited = [False for _ in range(len(graph))]
 
-    # Count the number of connections in the path
-    num_edges_to_remove = len(shortest_path) - 1 if shortest_path else 0
+    # insert starting node
+    queue.append(source)
+    visited[source] = True
 
-    return num_edges_to_remove
+    # cycle trough the queue
+    while queue:
+        # get current node
+        current_node = queue.popleft()
+
+        # check adjacent nodes in the graph
+        for node, weight in enumerate(graph[current_node]):
+
+            # if the edge not been visited and has positive weight
+            # meaning the edge exist
+            if not visited[node] and weight > 0:
+                # insert node in queue
+                queue.append(node)
+
+                # mark it as visited
+                visited[node] = True
+
+                # record path_record for path reconstruction
+                path_record[node] = current_node
+
+    # return whether there's a path to the sink
+    path_exist = True if visited[sink] else False
+
+    return path_exist
+
+def ford_fulkerson(input_graph, source_id, sink_id, n_nodes):
+    # create subgraph to work on
+    input_graph = create_subgraph(input_graph, n_nodes).copy()
+
+    # invert weights
+    for _, _, data in input_graph.edges(data=True):
+        data['weight'] = 1 / data['weight']
+
+    # setup
+    graph, index_map, source, sink = setup_ff(input_graph, source_id, sink_id)
+
+    # path_record stores for every node its path_record for path reconstruction
+    # this will be needed to obtain the edges in the min-cut
+    path_record = [None for _ in graph]
+
+    # initialize maximum flow
+    max_total_flow = 0
+
+    # while there exists a path from source to sink using
+    while BFS_ff(graph, source, sink, path_record):
+        # we have to find the flow of the current path
+        # the flow is given by the minimum capacity of all the traversed edges
+        current_path_flow = None
+        current_node = sink
+
+        # traverse the path computed by the BFS and find the current path flow
+        while current_node != source:
+            # extract capacity of the traversed edge
+            traversed_edge_capacity = graph[path_record[current_node]][current_node]
+
+            if current_path_flow is None:
+                # initialize current flow
+                current_path_flow = traversed_edge_capacity
+            
+            else:
+                # adjurn current flow
+                current_path_flow = min(current_path_flow, traversed_edge_capacity)
+
+            # adjurn current node
+            current_node = path_record[current_node]
+
+        # add the capacity of the new path to the maximum flow
+        max_total_flow += current_path_flow
+
+        # capacity of some edges is depleted while for some others have is has only been reduced
+        # we have to adjurn the capacities of the traversed edges by removing the current path flow
+        # to all the edges we traversed
+
+        # to do that we have again to visit again the path computed by the BFS
+        current_node = sink
+
+        while current_node != source:
+            # get the next node step for the path
+            new_node = path_record[current_node]
+
+            # update the capacity of the edge
+            # if a weight become zero we are effectively removing the edge
+            graph[new_node][current_node] -= current_path_flow
+
+            # adjurn current node
+            current_node = path_record[current_node]
+
+    # we know we have stopped because there is no path between the source and the sink anymore
+    # this is due to the fact that while finding the max flow we have closed some edges
+    # the partition we found in this way is the result of the min cut
+    index_source_partition = [node for node in range(len(graph)) if BFS_ff(graph, source, node, path_record)]
+    index_sink_partition = [node for node in range(len(graph)) if node not in index_source_partition]
+
+    # convert from index to id partition
+    id_source_partition, id_sink_partition = convert_results_ff(index_map, index_source_partition, index_sink_partition)
+
+    # get cutted graph and number of removed edges
+    n_removed_edges, cutted_graph = cutted_graph_ff(input_graph, id_source_partition, id_sink_partition)
+
+    # return maximum flow and node partitions
+    return n_removed_edges, cutted_graph, id_source_partition, id_sink_partition
 
 #2.1.5
 def BFS_visit(graph, start_node):
